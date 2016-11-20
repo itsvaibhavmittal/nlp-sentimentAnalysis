@@ -9,6 +9,7 @@ import nltkUtil
 from naiveBayes import naiveBayes
 from nltk.corpus import stopwords
 from kNN import kNN
+import ctypes
 
 idx = 0
 allWordsMap = {}
@@ -120,6 +121,21 @@ def preProcessExamples():
             if token in allWordsMap:
                 features[allWordsMap[token]] = features[allWordsMap[token]] +1
         example.features = features
+        fileToExample[fName] = example
+    print("Examples preprocessed")
+    
+def preProcessExamplesWithHash():
+    print("Preprocesing Examples")
+    numFeatures = len(allWordsMap)
+    print("Features:", numFeatures)
+    for fName, example in fileToExample.items():
+        tokens = example.tokens
+        features = [0]*numFeatures
+        for token in tokens:
+            if token in allWordsMap:
+                features[allWordsMap[token]] = 1
+        stringFeature = ''.join(features)    
+        example.features = [ctypes.c_size_t(hash(stringFeature)).value]
         fileToExample[fName] = example
     print("Examples preprocessed")
         
