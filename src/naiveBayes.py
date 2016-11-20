@@ -20,6 +20,8 @@ class naiveBayes:
         self.wrong = 0
         
     def train(self, trainingFeatures, trainingClasses):
+        print(trainingFeatures[0])
+        print(trainingClasses[0])
         if(len(trainingFeatures) != len(trainingClasses)):
             print("Length of feature vectors and class vector are different")
             return
