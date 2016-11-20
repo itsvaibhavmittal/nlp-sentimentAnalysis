@@ -7,10 +7,14 @@ from os import listdir
 import sys
 import nltkUtil
 from naiveBayes import naiveBayes
+from nltk.corpus import stopwords
+from kNN import kNN
 
 idx = 0
 allWordsMap = {}
 fileToExample = {}
+wordToDoc = {}
+stop = set(stopwords.words('english'))
 
 class TrainSplit:
     """Represents a set of training/testing data. self.train is a list of Examples, as is self.test. 
@@ -41,14 +45,14 @@ def readFile(fileName):
     file = open(fileName)
     content = file.read().replace('\n', ' ')
     file.close()
-    #tokens = nltkUtil.tokenization(content)
-    tokens = segmentWords(content)
-    #print("Filename:", fileName)
-    #print("Tokens:", len(tokens))
+    tokens = nltkUtil.tokenization(content)
+    #tokens = segmentWords(content)
     for token in tokens:
-        if(token not in allWordsMap):
-            allWordsMap[token] = idx
-            idx += 1
+        if token in stop:
+            continue
+        if(token not in wordToDoc):
+            wordToDoc[token] = set()
+        wordToDoc[token].add(fileName)
     return tokens
 
 def tenFoldCrossValidation():
@@ -56,7 +60,7 @@ def tenFoldCrossValidation():
     print("Splitting")
     for fold in range(0, 10):
         split = TrainSplit()
-        for fName, example in fileToExample:
+        for fName, example in fileToExample.items():
             fileName = example.name
             if(fileName.startswith('doc_'+str(fold)+'_')):
                 split.test.append(example)
@@ -70,9 +74,10 @@ def tenFoldCrossValidation():
 def test10Fold():
     splits = tenFoldCrossValidation()
     count = 0
+    total = 0
     print("Training")
     for split in splits:
-        nb =  naiveBayes()
+        nb =  kNN(3)
         trainFeatures = []
         trainClasses = []
         testFeatures = []
@@ -88,18 +93,32 @@ def test10Fold():
         
         nb.train(trainFeatures,trainClasses )
         nb.test(testFeatures, testClasses)
+        accuracy = nb.getCorrectCount()/ len(testClasses)
+        total = total  + accuracy
+        print("Correctly Classified:", str(accuracy))
+        #print("Wrongly Classified:",str(nb.getWrongCount()) )
+    
+    print("Total accuracy = " , str(accuracy/10))
         
-        print("Correctly Classified:", str(nb.getCorrectCount()))
-        print("Wrongly Classified:",str(nb.getWrongCount()) )
+
+def filterFeatures():
+    global idx
+    for token, fset in wordToDoc.items():
+        #print(len(wordToDoc[token]))
+        if len(wordToDoc[token]) >= 200:
+            allWordsMap[token] = idx
+            idx +=1
  
 def preProcessExamples():
     print("Preprocesing Examples")
     numFeatures = len(allWordsMap)
+    print("Features:", numFeatures)
     for fName, example in fileToExample.items():
         tokens = example.tokens
         features = [0]*numFeatures
         for token in tokens:
-            features[allWordsMap[token]] = features[allWordsMap[token]] +1
+            if token in allWordsMap:
+                features[allWordsMap[token]] = features[allWordsMap[token]] +1
         example.features = features
         fileToExample[fName] = example
     print("Examples preprocessed")
@@ -128,6 +147,7 @@ def preprocess(parentDir):
         example.klass = 'neu'
         example.name = fileName
         fileToExample[fname] = example
+    filterFeatures()
     preProcessExamples()
 
         

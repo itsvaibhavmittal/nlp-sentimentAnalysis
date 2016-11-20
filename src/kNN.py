@@ -33,14 +33,14 @@ class kNN:
             print("Length of feature vectors and class vector are different")
             return
         
-        predictedClasses = self.predict(testFeatures)
+        predictedClasses = self.classifier.predict(testFeatures)
         for i in range(0, len(predictedClasses)):
             if(predictedClasses[i] == testClasses[i]):
                 self.correct += 1
             else:
                 self.wrong += 1
         
-        print("Correctly classified:" + self.correct + " out of " + len(testClasses))
+        #print("Correctly classified:" + self.correct + " out of " + len(testClasses))
         
     def getCorrectCount(self):
         return self.correct
