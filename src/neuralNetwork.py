@@ -42,7 +42,7 @@ class neuralNetwork:
             else:
                 self.wrong += 1
         
-        print("Correctly classified:" + self.correct + " out of " + len(testClasses))
+        #print("Correctly classified:" + self.correct + " out of " + len(testClasses))
         
     def getCorrectCount(self):
         return self.correct

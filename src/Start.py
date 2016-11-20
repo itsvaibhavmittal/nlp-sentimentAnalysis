@@ -10,11 +10,15 @@ from naiveBayes import naiveBayes
 from nltk.corpus import stopwords
 from kNN import kNN
 import ctypes
+from neuralNetwork import neuralNetwork
+from svm import svm
+from afinn import afinn
 
 idx = 0
 allWordsMap = {}
 fileToExample = {}
 wordToDoc = {}
+allWords = []
 stop = set(stopwords.words('english'))
 
 class TrainSplit:
@@ -47,8 +51,11 @@ def readFile(fileName):
     content = file.read().replace('\n', ' ')
     file.close()
     tokens = nltkUtil.tokenization(content)
+    #print(nltkUtil.posTag(tokens))
     #tokens = segmentWords(content)
     for token in tokens:
+        if token ==  "n't":
+            token = "not"
         if token in stop:
             continue
         if(token not in wordToDoc):
@@ -73,12 +80,16 @@ def tenFoldCrossValidation():
 
 
 def test10Fold():
+    global allWords
     splits = tenFoldCrossValidation()
     count = 0
     total = 0
     print("Training")
     for split in splits:
-        nb =  kNN(3)
+        nb =  naiveBayes()
+        #nb = neuralNetwork((5,),1000)
+        #nb = afinn(allWords)
+        #nb = svm()
         trainFeatures = []
         trainClasses = []
         testFeatures = []
@@ -99,16 +110,20 @@ def test10Fold():
         print("Correctly Classified:", str(accuracy))
         #print("Wrongly Classified:",str(nb.getWrongCount()) )
     
-    print("Total accuracy = " , str(accuracy/10))
+    print("Total accuracy = " , str(total/10))
         
 
 def filterFeatures():
     global idx
+    global allWords
     for token, fset in wordToDoc.items():
         #print(len(wordToDoc[token]))
-        if len(wordToDoc[token]) >= 200:
+        if len(wordToDoc[token]) >= 200 and len(wordToDoc[token]) <= 10000:
             allWordsMap[token] = idx
             idx +=1
+    allWords = [None]*len(allWordsMap)
+    for token, index in allWordsMap.items():
+        allWords[index] = token
  
 def preProcessExamples():
     print("Preprocesing Examples")
@@ -134,8 +149,9 @@ def preProcessExamplesWithHash():
         for token in tokens:
             if token in allWordsMap:
                 features[allWordsMap[token]] = 1
-        stringFeature = ''.join(features)    
-        example.features = [ctypes.c_size_t(hash(stringFeature)).value]
+        #stringFeature = ''.join(features)    
+        #example.features = [ctypes.c_size_t(hash(stringFeature)).value]
+        example.features = features
         fileToExample[fName] = example
     print("Examples preprocessed")
         
@@ -164,7 +180,8 @@ def preprocess(parentDir):
         example.name = fileName
         fileToExample[fname] = example
     filterFeatures()
-    preProcessExamples()
+    #preProcessExamples()
+    preProcessExamplesWithHash()
 
         
 def main():

@@ -3,7 +3,7 @@ Created on Nov 20, 2016
 
 @author: vibhu
 '''
-from sklearn import svm
+from sklearn.svm import SVC
 
 class svm:
     '''
@@ -15,7 +15,7 @@ class svm:
         '''
         Constructor
         '''
-        self.classifier = svm.SVC()
+        self.classifier = SVC()
         self.correct = 0
         self.wrong = 0
         
