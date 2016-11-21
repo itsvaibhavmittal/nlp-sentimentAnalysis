@@ -21,12 +21,12 @@ def negationPhrases(taggedWordsTuples):
     NOV = []
     for i in range(0, len(taggedWordsTuples)):
         tupl = taggedWordsTuples[i]
-        if tupl[1] in negativePrefixes:
+        if (tupl[1] in negativePrefixes) and (i+1 < len(taggedWordsTuples)):
             tuple1 = taggedWordsTuples[i + 1]
             if(tuple1[1] in adjTags or tuple1[1] in verbTags):
                 NOA.append(tupl[0] + " " + tuple1[0])
                 #NOV.append(tupl[0] + " " + tuple1[0]) 
-            else:
+            elif i+2 < len(taggedWordsTuples) :
                 tuple2 = taggedWordsTuples[i + 2]
                 if(tuple2[1] in adjTags or tuple2[1] in verbTags):
                     NOA.append(tupl[0] + " " + tuple1[0] + " " + tuple2[0])
@@ -81,8 +81,6 @@ def getPhrasesAndTokens(content, poswWords, negWords):
             NOA, NOV = negationPhrases(taggedTokens)
             if len(NOA) > 0:
                 phrases = phrases + NOA
-            if len(NOV) > 0:
-                phrases = phrases + NOV
             resultTokens = resultTokens + taggedTokens
    # print("Phrases:", phrases)
     #print("tokens:", resultTokens)

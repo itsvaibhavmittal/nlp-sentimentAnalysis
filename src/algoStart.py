@@ -90,6 +90,7 @@ def readFile(fileName):
     return tokens
 
 def readFileContent(fileName):
+    #print(fileName)
     file = open(fileName)
     content = file.read()
     file.close()
@@ -186,16 +187,18 @@ def addPhrase(phrase, rating):
         phraseOccurence5[phrase] = phraseOccurence5[phrase] + 1
 
 def addToken(token, rating, posWords, negWords):
-    if token[0] not in posWords and token[0] not in negWords:
-        return 0
     label = 0
     if token[0] in posWords:
-         label = 1
+        label = 1
     elif token[0] in negWords:
-         label = -1
+        label = -1
+    else:
+        return 0
+    
     if token not in tokensOccurence:
         tokensOccurence[token] = 0
     tokensOccurence[token] = tokensOccurence[token] + 1
+    
     if rating == 1:
         if token not in tokenOccurence1:
             tokenOccurence1[token] = 0
@@ -225,9 +228,10 @@ def filterPhrasesAndTokens():
     global tokenIndex
     print("Initial Phrases:", len(phrasesOccurence))
     for phrase, occurence in phrasesOccurence.items():
-        if occurence >= 30:
+        if occurence >= 50:
             phrasesScore[phrase] = 0
             phraseToIndex[phrase] = phraseIndex
+            print(phrase, "      "),
             phraseIndex += 1
     print("Remaining Phrases:", len(phrasesScore))
     
@@ -235,33 +239,38 @@ def filterPhrasesAndTokens():
     for token, occurence in tokensOccurence.items():
         if occurence >= 30:
             tokensScore[token] = 0
-            tokenToIndex[phrase] = tokenIndex
+            tokenToIndex[token] = tokenIndex
+            print(token, "      "),
             tokenIndex += 1
     print("Remaining Tokens:", len(tokensScore))
 
 def getPhraseOccurence(phrase, rating):
-    if rating ==1:
+    if rating ==1 and phrase in phraseOccurence1:
         return phraseOccurence1[phrase]
-    elif rating ==2:
+    elif rating ==2 and phrase in phraseOccurence2:
         return phraseOccurence2[phrase]
-    elif rating ==3:
+    elif rating ==3 and phrase in phraseOccurence3:
         return phraseOccurence3[phrase]
-    elif rating ==4:
+    elif rating ==4 and phrase in phraseOccurence4:
         return phraseOccurence4[phrase]
-    else:
+    elif phrase in phraseOccurence5:
         return phraseOccurence5[phrase]
+    else:
+        return 0
     
 def getTokenOccurence(token, rating):
-    if rating ==1:
+    if rating ==1 and token in tokenOccurence1:
         return tokenOccurence1[token]
-    elif rating ==2:
+    elif rating ==2 and token in tokenOccurence2:
         return tokenOccurence2[token]
-    elif rating ==3:
+    elif rating ==3 and token in tokenOccurence3:
         return tokenOccurence3[token]
-    elif rating ==4:
+    elif rating ==4 and token in tokenOccurence4:
         return tokenOccurence4[token]
-    else:
+    elif token in tokenOccurence5:
         return tokenOccurence5[token]
+    else:
+        return 0
 
 def calculateScore():
     for phrase, score in phrasesScore.items():
@@ -306,15 +315,19 @@ def preProcessExamples(posWords, negWords):
         phrases, tokens, example.label = Processing.getPhrasesAndTokens(example.content, posWords, negWords)
         example.phrases = phrases
         example.tokens = tokens
+        if example.label > 0:
+            example.label = 2
+        elif example.label < 0:
+            example.label = 1
         label = 0
         for phrase in phrases:
             addPhrase(phrase, example.rating)
         for token in tokens:
             label += addToken(token, example.rating, posWords, negWords)
         if label >0:
-            example.groundTruth = 1
+            example.groundTruth = 2#1
         elif label < 0:
-            example.groundTruth = -1
+            example.groundTruth = 1#-1
         
         fileToExample[fName] = example
         count +=1
@@ -340,9 +353,15 @@ def preProcessExamplesWithHash():
         for token in tokens:
             if token in tokenToIndex:
                 tokenArray[tokenToIndex[token]] = 1
-        phraseHash = ctypes.c_size_t(hash(''.join(phraseArray))).value
-        tokenHash = ctypes.c_size_t(hash(''.join(tokenArray))).value
-        features = [phraseHash, tokenHash, getAverageScore(example), example.groundTruth, example.label]
+        #phraseHash = ctypes.c_size_t(hash(''.join(phraseArray))).value
+        #tokenHash = ctypes.c_size_t(hash(''.join(tokenArray))).value
+        #features = [phraseHash, tokenHash, getAverageScore(example), example.groundTruth, example.label]
+        features = []
+        features = features + phraseArray
+        features = features + tokenArray
+        features.append(getAverageScore(example))
+        features.append(example.groundTruth)
+        features.append(example.label)
         example.features = features
         fileToExample[fName] = example
     print("Examples preprocessed")

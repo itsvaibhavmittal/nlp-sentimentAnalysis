@@ -3,7 +3,7 @@ Created on Nov 19, 2016
 
 @author: vaibhav
 '''
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB #GaussianNB
 
 class naiveBayes:
     '''
@@ -15,7 +15,7 @@ class naiveBayes:
         '''
         Constructor
         '''
-        self.classifier = MultinomialNB()
+        self.classifier = MultinomialNB() #GaussianNB()
         self.correct = 0
         self.wrong = 0
         
