@@ -5,9 +5,12 @@ Created on Nov 20, 2016
 '''
 from sets import Set
 import nltkUtil
+import nltk.data
 
+tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 adjTags = Set(['JJ', 'JJR', 'JJS'])
 verbTags = Set(['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'])
+negativePrefixes = Set()
 
 def negationPhrases(taggedWordsTuples, negativePrefixes):
     '''
@@ -54,6 +57,30 @@ def sentenceTokens(sentence, positiveWords, negativeWords):
     negTokens = set(tokens) & set(negativeWords)
     if(posTokens is None and negTokens is None):
         return None
-    return(posTokens, negTokens)
+    return(tokens)
+
+def getSentencesFromContent(content):
+    global tokenizer
+    return tokenizer.tokenize(content)
+
+def getPhrasesAndTokens(content, poswWords, negWords):
+    phrases = []
+    tokens = []
+    sentences = getSentencesFromContent(content)
+    for sentence in sentences:
+        tokens = sentenceTokens(sentence,poswWords, negWords )
+        if tokens is not None:
+            taggedTokens = nltkUtil.posTag(tokens)
+            NOA, NOV = negationPhrases(taggedTokens,negativePrefixes)
+            if len(NOA) > 0:
+                phrases = phrases + NOA
+            if len(NOV) > 0:
+                phrases = phrases + NOV
+            tokens = tokens + taggedTokens
+    
+    return phrases, tokens
+                
+
+
         
         
