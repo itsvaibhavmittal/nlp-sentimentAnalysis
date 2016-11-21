@@ -39,6 +39,7 @@ tokenOccurence2 = {}
 tokenOccurence3 = {}
 tokenOccurence4 = {}
 tokenOccurence5 = {}
+rating = [0, 0, 0, 0, 0, 0]
 
 
 class TrainSplit:
@@ -60,6 +61,8 @@ class Example:
         self.content = ''
         self.rating = 0
         self.phrases = []
+        self.groundTruth = 0
+        self.label = 0
       
 
 def segmentWords(s):
@@ -143,7 +146,7 @@ def test10Fold():
     
     print("Total accuracy = " , str(total / 10))
         
-
+'''
 def filterFeatures():
     global idx
     global allWords
@@ -155,7 +158,7 @@ def filterFeatures():
     allWords = [None] * len(allWordsMap)
     for token, index in allWordsMap.items():
         allWords[index] = token
-
+'''
 
 def addPhrase(phrase, rating):
     if phrase not in phrasesOccurence:
@@ -184,7 +187,12 @@ def addPhrase(phrase, rating):
 
 def addToken(token, rating, posWords, negWords):
     if token[0] not in posWords and token[0] not in negWords:
-        return
+        return 0
+    label = 0
+    if token[0] in posWords:
+         label = 1
+    elif token[0] in negWords:
+         label = -1
     if token not in tokensOccurence:
         tokensOccurence[token] = 0
     tokensOccurence[token] = tokensOccurence[token] + 1
@@ -208,7 +216,8 @@ def addToken(token, rating, posWords, negWords):
         if token not in tokenOccurence5:
             tokenOccurence5[token] = 0
         tokenOccurence5[token] = tokenOccurence5[token] + 1
-        
+    
+    return label
 
 def filterPhrasesAndTokens():
     print("Filtering Phrases and Tokens")
@@ -230,23 +239,88 @@ def filterPhrasesAndTokens():
             tokenIndex += 1
     print("Remaining Tokens:", len(tokensScore))
 
+def getPhraseOccurence(phrase, rating):
+    if rating ==1:
+        return phraseOccurence1[phrase]
+    elif rating ==2:
+        return phraseOccurence2[phrase]
+    elif rating ==3:
+        return phraseOccurence3[phrase]
+    elif rating ==4:
+        return phraseOccurence4[phrase]
+    else:
+        return phraseOccurence5[phrase]
+    
+def getTokenOccurence(token, rating):
+    if rating ==1:
+        return tokenOccurence1[token]
+    elif rating ==2:
+        return tokenOccurence2[token]
+    elif rating ==3:
+        return tokenOccurence3[token]
+    elif rating ==4:
+        return tokenOccurence4[token]
+    else:
+        return tokenOccurence5[token]
+
+def calculateScore():
+    for phrase, score in phrasesScore.items():
+        num = 0
+        den = 0
+        for i in range(1,6):
+            num = num+ (i*rating[i]*getPhraseOccurence(phrase, i))
+            den = den + (rating[i]*getPhraseOccurence(phrase, i))
         
-        
+        phrasesScore[phrase] = float(num/den)
+    
+    for token, score in tokensScore.items():
+        num = 0
+        den = 0
+        for i in range(1,6):
+            num = num+ (i*rating[i]*getTokenOccurence(token, i))
+            den = den + (rating[i]*getTokenOccurence(token, i))
+        tokensScore[token] = float(num/den)
+
+def getAverageScore(example):
+    score = 0
+    count  = 0
+    for phrase in example.phrases:
+        if phrase in phrasesScore:
+            score += phrasesScore[phrase]
+            count +=1
+    
+    for token in example.tokens:
+        if token in tokensScore:
+            score += tokensScore[token]
+            count +=1
+    
+    if (count ==0):
+        return 0
+    return float(score/count)
+       
 def preProcessExamples(posWords, negWords):
     print("Preprocesing Examples")
+    count  = 0
     for fName, example in fileToExample.items():
-        phrases, tokens = Processing.getPhrasesAndTokens(example.content, posWords, negWords)
+        print(count)
+        phrases, tokens, example.label = Processing.getPhrasesAndTokens(example.content, posWords, negWords)
         example.phrases = phrases
         example.tokens = tokens
+        label = 0
         for phrase in phrases:
             addPhrase(phrase, example.rating)
         for token in tokens:
-            addToken(token, example.rating, posWords, negWords)
+            label += addToken(token, example.rating, posWords, negWords)
+        if label >0:
+            example.groundTruth = 1
+        elif label < 0:
+            example.groundTruth = -1
+        
         fileToExample[fName] = example
+        count +=1
     print("Examples preprocessed")
     filterPhrasesAndTokens()
     calculateScore()
-    
 
     
 def preProcessExamplesWithHash():
@@ -266,27 +340,35 @@ def preProcessExamplesWithHash():
         for token in tokens:
             if token in tokenToIndex:
                 tokenArray[tokenToIndex[token]] = 1
-        phraseHash = [ctypes.c_size_t(hash(''.join(phraseArray))).value] 
-        tokenHash = [ctypes.c_size_t(hash(''.join(tokenArray))).value]
+        phraseHash = ctypes.c_size_t(hash(''.join(phraseArray))).value
+        tokenHash = ctypes.c_size_t(hash(''.join(tokenArray))).value
         features = [phraseHash, tokenHash, getAverageScore(example), example.groundTruth, example.label]
         example.features = features
         fileToExample[fName] = example
     print("Examples preprocessed")
+
+def processRatings():
+    global rating
+    for i in range(1,5):
+        rating[i] = rating[5]/rating[i]
         
 def preprocess(parentDir):
+    global rating
     subdirs = ["/pos", "/neg", "/neu"]
     for subdir in subdirs:
         for fileName in listdir(parentDir + subdir):
-            fname = parentDir + subdir + fileName
+            fname = parentDir + subdir + "/"+fileName
             example = Example()
-            example.tokens = readFileContent(fname)
+            example.content = readFileContent(fname)
             example.klass = subdir[1:]
-            example.rating = int(fileName.spit("_")[2])
+            example.rating = int(fileName.split("_")[2])
+            rating[int(fileName.split("_")[2])]  = rating[int(fileName.split("_")[2])] +1
             example.name = fileName
             fileToExample[fname] = example
     # filterFeatures()
     negWords = Processing.getNegativeWords(parentDir)
     posWords = Processing.getPositiveWords(parentDir)
+    processRatings()
     preProcessExamples(posWords, negWords)
     preProcessExamplesWithHash()
 
