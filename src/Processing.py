@@ -1,9 +1,9 @@
 '''
 Created on Nov 20, 2016
 
-@author: vaibhav
+
 '''
-#from sets import Set
+
 import nltkUtil
 import nltk.data
 
@@ -25,12 +25,10 @@ def negationPhrases(taggedWordsTuples):
             tuple1 = taggedWordsTuples[i + 1]
             if(tuple1[1] in adjTags or tuple1[1] in verbTags):
                 NOA.append(tupl[0] + " " + tuple1[0])
-                #NOV.append(tupl[0] + " " + tuple1[0]) 
             elif i+2 < len(taggedWordsTuples) :
                 tuple2 = taggedWordsTuples[i + 2]
                 if(tuple2[1] in adjTags or tuple2[1] in verbTags):
                     NOA.append(tupl[0] + " " + tuple1[0] + " " + tuple2[0])
-                    #NOV.append(tupl[0] + " " + tuple1[0] + " " + tuple2[0])
                     
     return (NOA, NOV)
 
@@ -52,6 +50,12 @@ def getNegativeWords(directory):
 
 def sentenceTokens(sentence, positiveWords, negativeWords):
     tokens = nltkUtil.tokenization(sentence)
+    for i in range(0, len(tokens)):
+        tokens[i] = tokens[i].lower()
+        if tokens[i] ==  "n't":
+            tokens[i] = "not"
+        if tokens[i] ==  "'s":
+            tokens[i] = "is"
     posTokens = set(tokens) & set(positiveWords)
     negTokens = set(tokens) & set(negativeWords)
     if(posTokens is None and negTokens is None):
@@ -71,7 +75,6 @@ def getPhrasesAndTokens(content, poswWords, negWords):
     phrases = []
     resultTokens = []
     resultLabel = 0
-    #print(content)
     sentences = getSentencesFromContent(content)
     for sentence in sentences:
         tokens, label = sentenceTokens(sentence,poswWords, negWords )
@@ -82,9 +85,6 @@ def getPhrasesAndTokens(content, poswWords, negWords):
             if len(NOA) > 0:
                 phrases = phrases + NOA
             resultTokens = resultTokens + taggedTokens
-   # print("Phrases:", phrases)
-    #print("tokens:", resultTokens)
-    #print("Label:", resultLabel)
     return phrases, resultTokens, resultLabel
                 
 

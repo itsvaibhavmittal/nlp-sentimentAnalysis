@@ -1,7 +1,6 @@
 '''
 Created on Nov 21, 2016
 
-@author: vaibhav
 '''
 from sklearn.ensemble import RandomForestClassifier
 
@@ -26,15 +25,12 @@ class RandomForest:
         X = trainingFeatures
         Y = trainingClasses
         self.classifier.fit(X, Y)
-        print("MultinomialNB training complete")
         
     def test(self, testFeatures, testClasses):
         if(len(testFeatures) != len(testClasses)):
             print("Length of feature vectors and class vector are different")
             return
-        print("Predicting Classes")
         predictedClasses = self.classifier.predict(testFeatures)
-        print("Predicted Classes")
         for i in range(0, len(predictedClasses)):
             if(predictedClasses[i] == testClasses[i]):
                 self.correct += 1

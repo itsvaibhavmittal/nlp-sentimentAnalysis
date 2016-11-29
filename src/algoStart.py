@@ -1,18 +1,16 @@
 '''
 Created on Nov 19, 2016
 
-@author: vaibhav
 '''
 from os import listdir
 import sys
 import nltkUtil
 from naiveBayes import naiveBayes
 from nltk.corpus import stopwords
-from kNN import kNN
 import ctypes
 from neuralNetwork import neuralNetwork
 from svm import svm
-from afinn import afinn
+from RandomForest import RandomForest
 import Processing
 
 idx = 0
@@ -77,8 +75,6 @@ def readFile(fileName):
     content = file.read().replace('\n', ' ')
     file.close()
     tokens = nltkUtil.tokenization(content)
-    # print(nltkUtil.posTag(tokens))
-    # tokens = segmentWords(content)
     for token in tokens:
         if token == "n't":
             token = "not"
@@ -90,7 +86,6 @@ def readFile(fileName):
     return tokens
 
 def readFileContent(fileName):
-    #print(fileName)
     file = open(fileName)
     content = file.read()
     file.close()
@@ -100,7 +95,6 @@ def readFileContent(fileName):
 
 def tenFoldCrossValidation():
     splits = []
-    print("Splitting")
     for fold in range(0, 10):
         split = TrainSplit()
         for fName, example in fileToExample.items():
@@ -111,29 +105,24 @@ def tenFoldCrossValidation():
                 split.train.append(example)
         splits.append(split)
     return splits
-    print("Splitting Over")
 
 
 def test10Fold():
     global allWords
     splits = tenFoldCrossValidation()
+    
     count = 0
     total = 0
-    print("Training")
+    print("Naive Bayes")
     for split in splits:
         nb = naiveBayes()
-        # nb = neuralNetwork((5,),1000)
-        # nb = afinn(allWords)
-        # nb = svm()
         trainFeatures = []
         trainClasses = []
         testFeatures = []
         testClasses = []
-        print("Training:", count, " started")
         for example in split.train:
             trainFeatures.append(example.features)
             trainClasses.append(example.klass)
-        print("Testing:", count, " started")
         for example in split.test:
             testFeatures.append(example.features)
             testClasses.append(example.klass)
@@ -142,24 +131,112 @@ def test10Fold():
         nb.test(testFeatures, testClasses)
         accuracy = nb.getCorrectCount() / len(testClasses)
         total = total + accuracy
-        print("Correctly Classified:", str(accuracy))
-        # print("Wrongly Classified:",str(nb.getWrongCount()) )
+        print("[INFO]\tFold ", str(count), " Accuracy:", str(accuracy))
+        count =  count +1
     
-    print("Total accuracy = " , str(total / 10))
+    print("[INFO]\tAccuracy:", str(total / 10))
+
+    count = 0
+    total = 0
+    print("Random Forest")
+    for split in splits:
+        nb = RandomForest(100)
+        trainFeatures = []
+        trainClasses = []
+        testFeatures = []
+        testClasses = []
+        for example in split.train:
+            trainFeatures.append(example.features)
+            trainClasses.append(example.klass)
+        for example in split.test:
+            testFeatures.append(example.features)
+            testClasses.append(example.klass)
         
-'''
-def filterFeatures():
-    global idx
-    global allWords
-    for token, fset in wordToDoc.items():
-        # print(len(wordToDoc[token]))
-        if len(wordToDoc[token]) >= 200 and len(wordToDoc[token]) <= 10000:
-            allWordsMap[token] = idx
-            idx += 1
-    allWords = [None] * len(allWordsMap)
-    for token, index in allWordsMap.items():
-        allWords[index] = token
-'''
+        nb.train(trainFeatures, trainClasses)
+        nb.test(testFeatures, testClasses)
+        accuracy = nb.getCorrectCount() / len(testClasses)
+        total = total + accuracy
+        print("[INFO]\tFold ", str(count), " Accuracy:", str(accuracy))
+        count =  count +1
+    
+    print("[INFO]\tAccuracy:", str(total / 10))
+    
+    count = 0
+    total = 0
+    print("Neural 5")
+    for split in splits:
+        nb = neuralNetwork((5,),1000)
+        trainFeatures = []
+        trainClasses = []
+        testFeatures = []
+        testClasses = []
+        for example in split.train:
+            trainFeatures.append(example.features)
+            trainClasses.append(example.klass)
+        for example in split.test:
+            testFeatures.append(example.features)
+            testClasses.append(example.klass)
+        
+        nb.train(trainFeatures, trainClasses)
+        nb.test(testFeatures, testClasses)
+        accuracy = nb.getCorrectCount() / len(testClasses)
+        total = total + accuracy
+        print("[INFO]\tFold ", str(count), " Accuracy:", str(accuracy))
+        count =  count +1
+    
+    print("[INFO]\tAccuracy:", str(total / 10))
+    
+    count = 0
+    total = 0
+    print("Neural 3")
+    for split in splits:
+        nb = neuralNetwork((3,),1000)
+        trainFeatures = []
+        trainClasses = []
+        testFeatures = []
+        testClasses = []
+        for example in split.train:
+            trainFeatures.append(example.features)
+            trainClasses.append(example.klass)
+        for example in split.test:
+            testFeatures.append(example.features)
+            testClasses.append(example.klass)
+        
+        nb.train(trainFeatures, trainClasses)
+        nb.test(testFeatures, testClasses)
+        accuracy = nb.getCorrectCount() / len(testClasses)
+        total = total + accuracy
+        print("[INFO]\tFold ", str(count), " Accuracy:", str(accuracy))
+        count =  count +1
+    
+    print("[INFO]\tAccuracy:", str(total / 10))
+    
+    count = 0
+    total = 0
+    print("SVM")
+    for split in splits:
+        nb = svm()
+        trainFeatures = []
+        trainClasses = []
+        testFeatures = []
+        testClasses = []
+        for example in split.train:
+            trainFeatures.append(example.features)
+            trainClasses.append(example.klass)
+        for example in split.test:
+            testFeatures.append(example.features)
+            testClasses.append(example.klass)
+        
+        nb.train(trainFeatures, trainClasses)
+        nb.test(testFeatures, testClasses)
+        accuracy = nb.getCorrectCount() / len(testClasses)
+        total = total + accuracy
+        print("[INFO]\tFold ", str(count), " Accuracy:", str(accuracy))
+        count =  count +1
+    
+    print("[INFO]\tAccuracy:", str(total / 10))
+   
+
 
 def addPhrase(phrase, rating):
     if phrase not in phrasesOccurence:
@@ -223,26 +300,19 @@ def addToken(token, rating, posWords, negWords):
     return label
 
 def filterPhrasesAndTokens():
-    print("Filtering Phrases and Tokens")
     global phraseIndex
     global tokenIndex
-    print("Initial Phrases:", len(phrasesOccurence))
     for phrase, occurence in phrasesOccurence.items():
-        if occurence >= 50:
+        if occurence >= 10:
             phrasesScore[phrase] = 0
             phraseToIndex[phrase] = phraseIndex
-            print(phrase, "      "),
             phraseIndex += 1
-    print("Remaining Phrases:", len(phrasesScore))
     
-    print("Initial Tokens:", len(tokensOccurence))
     for token, occurence in tokensOccurence.items():
-        if occurence >= 30:
+        if occurence >= 10:
             tokensScore[token] = 0
             tokenToIndex[token] = tokenIndex
-            print(token, "      "),
             tokenIndex += 1
-    print("Remaining Tokens:", len(tokensScore))
 
 def getPhraseOccurence(phrase, rating):
     if rating ==1 and phrase in phraseOccurence1:
@@ -308,10 +378,8 @@ def getAverageScore(example):
     return float(score/count)
        
 def preProcessExamples(posWords, negWords):
-    print("Preprocesing Examples")
     count  = 0
     for fName, example in fileToExample.items():
-        print(count)
         phrases, tokens, example.label = Processing.getPhrasesAndTokens(example.content, posWords, negWords)
         example.phrases = phrases
         example.tokens = tokens
@@ -319,29 +387,25 @@ def preProcessExamples(posWords, negWords):
             example.label = 2
         elif example.label < 0:
             example.label = 1
-        label = 0
+        label = 1
         for phrase in phrases:
             addPhrase(phrase, example.rating)
         for token in tokens:
             label += addToken(token, example.rating, posWords, negWords)
         if label >0:
-            example.groundTruth = 2#1
+            example.groundTruth = 2
         elif label < 0:
-            example.groundTruth = 1#-1
+            example.groundTruth = 1
         
         fileToExample[fName] = example
         count +=1
-    print("Examples preprocessed")
     filterPhrasesAndTokens()
     calculateScore()
 
     
 def preProcessExamplesWithHash():
-    print("Preprocesing Examples")
     numPhrases = len(phraseToIndex)
     numTokens = len(tokenToIndex)
-    print("Phrases:", numPhrases)
-    print("Tokens:", numTokens)
     for fName, example in fileToExample.items():
         phrases = example.phrases
         phraseArray = [0] * numPhrases
@@ -353,9 +417,6 @@ def preProcessExamplesWithHash():
         for token in tokens:
             if token in tokenToIndex:
                 tokenArray[tokenToIndex[token]] = 1
-        #phraseHash = ctypes.c_size_t(hash(''.join(phraseArray))).value
-        #tokenHash = ctypes.c_size_t(hash(''.join(tokenArray))).value
-        #features = [phraseHash, tokenHash, getAverageScore(example), example.groundTruth, example.label]
         features = []
         features = features + phraseArray
         features = features + tokenArray
@@ -364,16 +425,16 @@ def preProcessExamplesWithHash():
         features.append(example.label)
         example.features = features
         fileToExample[fName] = example
-    print("Examples preprocessed")
 
 def processRatings():
     global rating
-    for i in range(1,5):
-        rating[i] = rating[5]/rating[i]
+    for i in range(1,6):
+        if i != 3:
+            rating[i] = rating[5]/rating[i]
         
 def preprocess(parentDir):
     global rating
-    subdirs = ["/pos", "/neg", "/neu"]
+    subdirs = ["/pos", "/neg"]
     for subdir in subdirs:
         for fileName in listdir(parentDir + subdir):
             fname = parentDir + subdir + "/"+fileName
@@ -384,7 +445,6 @@ def preprocess(parentDir):
             rating[int(fileName.split("_")[2])]  = rating[int(fileName.split("_")[2])] +1
             example.name = fileName
             fileToExample[fname] = example
-    # filterFeatures()
     negWords = Processing.getNegativeWords(parentDir)
     posWords = Processing.getPositiveWords(parentDir)
     processRatings()
@@ -394,7 +454,7 @@ def preprocess(parentDir):
         
 def main():
     if (len(sys.argv) != 2):
-        print ('usage:\tstart.py <data path>')
+        print ('usage:\t algoStart.py <data path>')
         sys.exit(0)
     else:
         preprocess(sys.argv[1])
